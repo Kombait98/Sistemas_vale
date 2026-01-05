@@ -1,6 +1,7 @@
+require('dotenv').config();
 const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database('./database.sqlite');
-
+const dbPath = process.env.DB_PATH || './database.sqlite';
+const db = new sqlite3.Database(dbPath);
 db.serialize(() => {
     // Tabela de Vales (já existente)
     db.run(`CREATE TABLE IF NOT EXISTS vales (

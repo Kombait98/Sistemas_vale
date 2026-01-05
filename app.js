@@ -1,4 +1,11 @@
+require('dotenv').config(); // Carrega as variáveis do arquivo .env
+
 const express = require('express');
+const PORT = process.env.PORT || 3000; // Usa a porta do .env ou 3000 como padrão
+// ... restante das importações
+
+
+
 const bodyParser = require('body-parser');
 const db = require('./database');
 const app = express();
@@ -164,4 +171,7 @@ app.post('/unidades/deletar/:id', (req, res) => {
     });
 });
 
-app.listen(3000, () => console.log("Servidor rodando em http://localhost:3000"));
+// No final do app.js, altere o listen:
+app.listen(PORT, () => {
+    console.log(`Servidor rodando em ambiente ${process.env.NODE_ENV} na porta ${PORT}`);
+});
