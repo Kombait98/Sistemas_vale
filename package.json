@@ -19,10 +19,13 @@
   },
   "homepage": "https://github.com/Kombait98/Sistemas_vale#readme",
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "body-parser": "^2.2.1",
+    "bootstrap": "^5.3.8",
     "dotenv": "^17.2.3",
     "ejs": "^3.1.10",
     "express": "^5.2.1",
+    "express-session": "^1.18.2",
     "sqlite3": "^5.1.7"
   }
 }

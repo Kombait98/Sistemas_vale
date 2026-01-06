@@ -1,14 +1,12 @@
-require('dotenv').config(); // Carrega as variáveis do arquivo .env
-
+// 1. Importações
+require('dotenv').config();
 const express = require('express');
-const PORT = process.env.PORT || 3000; // Usa a porta do .env ou 3000 como padrão
-// ... restante das importações
-
-
-
-const bodyParser = require('body-parser');
+const session = require('express-session');
+const bcrypt = require('bcrypt');
 const db = require('./database');
 const app = express();
+const PORT = process.env.PORT || 3000;
+const bodyParser = require('body-parser');
 const queryJoin = `
     SELECT v.*, 
     u1.nome as nome_saida, 
@@ -19,26 +17,147 @@ const queryJoin = `
     LEFT JOIN unidades u2 ON v.chegada = u2.id
 `;
 
+
+// 2. Middlewares de Configuração
 app.set('view engine', 'ejs');
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
+// 3. Configuração da Sessão (Certifique-se que o segredo existe no .env)
+app.use(session({
+    secret: process.env.APP_SECRET || 'chave-de-emergencia',
+    resave: false,
+    saveUninitialized: false, // Alterado para false por segurança
+    cookie: { maxAge: 3600000 } 
+}));
+// Middleware para passar o usuário logado para todas as views EJS automaticamente
+app.use((req, res, next) => {
+    res.locals.usuarioLogado = req.session.user || null;
+    next();
+});
+
+// Rota de Logout
+app.get('/logout', (req, res) => {
+    req.session.destroy(() => {
+        res.redirect('/login');
+    });
+});
+
+// 4. Middlewares de Proteção
+function checkAuth(req, res, next) {
+    console.log("Verificando autenticação...");
+    if (req.session.user) {
+        console.log("Usuário logado:", req.session.user.login);
+        return next();
+    }
+    console.log("Usuário não logado, redirecionando para login.");
+    res.redirect('/login');
+}
+
+function checkAdmin(req, res, next) {
+    if (req.session.user && req.session.user.permissao === 'admin') {
+        return next();
+    }
+    res.status(403).send("Acesso negado: Somente administradores.");
+}
+
+app.get('/login', (req, res) => {
+    res.render('login');
+});
+
+app.post('/login', (req, res) => {
+    const { login, senha } = req.body;
+    console.log("Tentativa de login:", login);
+
+    db.get("SELECT * FROM usuarios WHERE login = ?", [login], async (err, user) => {
+        if (err) {
+            console.error("Erro no Banco:", err);
+            return res.status(500).send("Erro no banco de dados");
+        }
+
+        if (user) {
+            const senhaCorreta = await bcrypt.compare(senha, user.senha);
+            if (senhaCorreta) {
+                // SUCESSO: Salvando na sessão
+                req.session.user = {
+                    id: user.id,
+                    nome: user.nome,
+                    permissao: user.permissao,
+                    login: user.login
+                };
+
+                // Força a gravação da sessão antes do redirecionamento
+                return req.session.save(() => {
+                    console.log("Sessão salva. Redirecionando...");
+                    res.redirect('/');
+                });
+            }
+        }
+        
+        console.log("Falha no login para:", login);
+        res.send("Usuário ou senha inválidos. <a href='/login'>Tentar novamente</a>");
+    });
+});
+
+app.get('/', checkAuth, (req, res) => {
+    console.log("Acessando a Home...");
+    db.all("SELECT * FROM usuarios ORDER BY nome", [], (err, usuarios) => {
+        if (err) return res.status(500).send("Erro ao buscar usuários");
+
+        db.all("SELECT * FROM unidades ORDER BY sigla", [], (err, unidades) => {
+            if (err) return res.status(500).send("Erro ao buscar unidades");
+
+            console.log("Renderizando cadastro...");
+            res.render('cadastro', { 
+                usuarios, 
+                unidades, 
+                usuarioLogado: req.session.user 
+            });
+        });
+    });
+});
 // --- ROTAS DE USUÁRIOS ---
 
-app.get('/usuarios', (req, res) => {
+app.get('/usuarios',checkAuth, checkAdmin,  (req, res) => {
     db.all("SELECT * FROM usuarios ORDER BY nome", [], (err, rows) => {
         res.render('usuarios', { usuarios: rows });
     });
 });
 
-app.post('/usuarios/novo', (req, res) => {
-    const { nome } = req.body;
-    db.run("INSERT INTO usuarios (nome) VALUES (?)", [nome], (err) => {
+
+// --- ATUALIZADO: Rota para criar novo usuário ---
+app.post('/usuarios/novo', checkAuth, checkAdmin, async (req, res) => {
+    const { login, nome, senha, permissao } = req.body;
+    
+    try {
+        // Criptografa a senha antes de salvar
+        const hash = await bcrypt.hash(senha, 10);
+        
+        db.run("INSERT INTO usuarios (login, nome, senha, permissao) VALUES (?, ?, ?, ?)", 
+            [login, nome, hash, permissao], (err) => {
+            if (err) {
+                console.error(err);
+                return res.send("Erro ao cadastrar usuário (Login já existe?)");
+            }
+            res.redirect('/usuarios');
+        });
+    } catch (e) {
+        res.status(500).send("Erro ao gerar senha");
+    }
+});
+
+// --- NOVO: Rota para alterar permissão ---
+app.post('/usuarios/editar-permissao/:id', checkAuth, checkAdmin, (req, res) => {
+    const { permissao } = req.body;
+    const { id } = req.params;
+
+    db.run("UPDATE usuarios SET permissao = ? WHERE id = ?", [permissao, id], (err) => {
+        if (err) return res.status(500).send("Erro ao atualizar permissão");
         res.redirect('/usuarios');
     });
 });
 
-app.post('/usuarios/deletar/:id', (req, res) => {
+app.post('/usuarios/deletar/:id', checkAuth, checkAdmin,(req, res) => {
     const id = req.params.id;
     
     db.run("DELETE FROM usuarios WHERE id = ?", [id], (err) => {
@@ -94,7 +213,7 @@ app.post('/cadastrar', (req, res) => {
     });
 });
 //Rota de autorização 
-app.get('/autorizacao', (req, res) => {
+app.get('/autorizacao',checkAuth, checkAdmin, (req, res) => {
     // Usa a queryJoin pura, apenas ordenando por data
     const sql = `${queryJoin} ORDER BY v.data DESC`;
     db.all(sql, [], (err, rows) => {
@@ -104,7 +223,7 @@ app.get('/autorizacao', (req, res) => {
 });
 
 //Rota de Relatorio 
-app.get('/relatorio', (req, res) => {
+app.get('/relatorio',checkAuth, (req, res) => {
     const { usuario, mes } = req.query;
     
     // Começamos com a query base, filtrando apenas autorizados (status=1)
@@ -147,20 +266,20 @@ app.get('/relatorio', (req, res) => {
 
 
 // --- ROTAS DE UNIDADES ---
-app.get('/unidades', (req, res) => {
+app.get('/unidades',checkAuth, checkAdmin, (req, res) => {
     db.all("SELECT * FROM unidades ORDER BY sigla", [], (err, rows) => {
         res.render('unidades', { unidades: rows });
     });
 });
 
-app.post('/unidades/novo', (req, res) => {
+app.post('/unidades/novo',checkAuth, checkAdmin,(req, res) => {
     const { sigla, nome } = req.body;
     db.run("INSERT INTO unidades (sigla, nome) VALUES (?, ?)", [sigla, nome], () => {
         res.redirect('/unidades');
     });
 });
 
-app.post('/unidades/deletar/:id', (req, res) => {
+app.post('/unidades/deletar/:id',checkAuth, checkAdmin, (req, res) => {
     db.run("DELETE FROM unidades WHERE id = ?", [req.params.id], () => {
         res.redirect('/unidades');
     });
