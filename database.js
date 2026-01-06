@@ -3,7 +3,7 @@ const sqlite3 = require('sqlite3').verbose();
 const dbPath = process.env.DB_PATH || './database.sqlite';
 const db = new sqlite3.Database(dbPath);
 db.serialize(() => {
-    // Tabela de Vales (já existente)
+    // Tabela de Vales
     db.run(`CREATE TABLE IF NOT EXISTS vales (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         usuario TEXT,
@@ -15,17 +15,16 @@ db.serialize(() => {
         motivo TEXT
     )`);
 
-    // NOVA: Tabela de Usuários
+    //Tabela de Usuários
     db.run(`CREATE TABLE IF NOT EXISTS usuarios (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nome TEXT UNIQUE
     )`);
     db.run("ALTER TABLE vales ADD COLUMN pago INTEGER DEFAULT 0", (err) => {
-        if (err) {
-            // Se der erro é porque a coluna provavelmente já existe, podemos ignorar
-        }
+        if (err) {}
     });
     db.run("ALTER TABLE vales ADD COLUMN status INTEGER DEFAULT 0", (err) => { });
+    //Tabela de Unidades
     db.run(`CREATE TABLE IF NOT EXISTS unidades (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         sigla TEXT UNIQUE,

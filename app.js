@@ -25,14 +25,12 @@ app.use(express.static('public'));
 
 // --- ROTAS DE USUÁRIOS ---
 
-// Tela de listagem e cadastro de usuários
 app.get('/usuarios', (req, res) => {
     db.all("SELECT * FROM usuarios ORDER BY nome", [], (err, rows) => {
         res.render('usuarios', { usuarios: rows });
     });
 });
 
-// Salvar novo usuário
 app.post('/usuarios/novo', (req, res) => {
     const { nome } = req.body;
     db.run("INSERT INTO usuarios (nome) VALUES (?)", [nome], (err) => {
@@ -40,32 +38,26 @@ app.post('/usuarios/novo', (req, res) => {
     });
 });
 
-// --- ROTAS DE VALES ---
+app.post('/usuarios/deletar/:id', (req, res) => {
+    const id = req.params.id;
+    
+    db.run("DELETE FROM usuarios WHERE id = ?", [id], (err) => {
+        if (err) {
+            console.error(err.message);
+            return res.send("Erro ao deletar usuário. Verifique se ele possui vales vinculados.");
+        }
+        res.redirect('/usuarios');
+    });
+});
 
-// Modificada: Busca usuários para o dropdown do cadastro
+
+
+// Rota de Vales
 app.get('/', (req, res) => {
     db.all("SELECT * FROM usuarios ORDER BY nome", [], (err, usuarios) => {
         db.all("SELECT * FROM unidades ORDER BY sigla", [], (err, unidades) => {
             res.render('cadastro', { usuarios, unidades });
         });
-    });
-});
-
-app.post('/cadastrar', (req, res) => {
-    const { usuario, data, saida, chegada, quantidade, valor, motivo } = req.body;
-    const query = `INSERT INTO vales (usuario, data, saida, chegada, quantidade, valor_unitario, motivo) VALUES (?, ?, ?, ?, ?, ?, ?)`;
-    db.run(query, [usuario, data, saida, chegada, quantidade, valor, motivo], () => {
-        res.redirect('/relatorio');
-    });
-});
-
-app.get('/autorizacao', (req, res) => {
-    // Usamos a queryJoin pura, apenas ordenando por data
-    const sql = `${queryJoin} ORDER BY v.data DESC`;
-
-    db.all(sql, [], (err, rows) => {
-        if (err) return res.send("Erro ao carregar autorizações");
-        res.render('autorizacao', { todosVales: rows });
     });
 });
 app.post('/vales/status/:id/:novoStatus', (req, res) => {
@@ -74,8 +66,6 @@ app.post('/vales/status/:id/:novoStatus', (req, res) => {
         res.redirect('/autorizacao');
     });
 });
-
-// --- NOVO: AÇÕES DE STATUS ---
 app.post('/vales/status/:id/:novoStatus', (req, res) => {
     const { id, novoStatus } = req.params;
     // novoStatus: 1 para autorizar, 2 para recusar
@@ -84,6 +74,36 @@ app.post('/vales/status/:id/:novoStatus', (req, res) => {
     });
 });
 
+app.post('/vales/alternar-pagamento/:id', (req, res) => {
+    const id = req.params.id;
+    db.get("SELECT pago FROM vales WHERE id = ?", [id], (err, row) => {
+        if (row) {
+            const novoStatus = row.pago === 0 ? 1 : 0;
+            db.run("UPDATE vales SET pago = ? WHERE id = ?", [novoStatus, id], () => {
+                res.redirect('/relatorio');
+            });
+        }
+    });
+});
+// Rota para Cadastro
+app.post('/cadastrar', (req, res) => {
+    const { usuario, data, saida, chegada, quantidade, valor, motivo } = req.body;
+    const query = `INSERT INTO vales (usuario, data, saida, chegada, quantidade, valor_unitario, motivo) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    db.run(query, [usuario, data, saida, chegada, quantidade, valor, motivo], () => {
+        res.redirect('/relatorio');
+    });
+});
+//Rota de autorização 
+app.get('/autorizacao', (req, res) => {
+    // Usa a queryJoin pura, apenas ordenando por data
+    const sql = `${queryJoin} ORDER BY v.data DESC`;
+    db.all(sql, [], (err, rows) => {
+        if (err) return res.send("Erro ao carregar autorizações");
+        res.render('autorizacao', { todosVales: rows });
+    });
+});
+
+//Rota de Relatorio 
 app.get('/relatorio', (req, res) => {
     const { usuario, mes } = req.query;
     
@@ -103,9 +123,9 @@ app.get('/relatorio', (req, res) => {
 
     sql += " ORDER BY v.data DESC";
 
-    // 1. Buscamos usuários para o filtro
+    // 1. Busca usuários para o filtro
     db.all("SELECT * FROM usuarios ORDER BY nome", [], (err, listaUsuarios) => {
-        // 2. Buscamos os vales usando a nossa query com JOIN
+        // 2. Busca os vales usando a nossa query com JOIN
         db.all(sql, params, (err, rows) => {
             if (err) return res.send("Erro ao processar relatório");
 
@@ -124,32 +144,7 @@ app.get('/relatorio', (req, res) => {
         });
     });
 });
-// Rota para deletar usuário
-app.post('/usuarios/deletar/:id', (req, res) => {
-    const id = req.params.id;
-    
-    db.run("DELETE FROM usuarios WHERE id = ?", [id], (err) => {
-        if (err) {
-            console.error(err.message);
-            return res.send("Erro ao deletar usuário. Verifique se ele possui vales vinculados.");
-        }
-        res.redirect('/usuarios');
-    });
-});
 
-app.post('/vales/alternar-pagamento/:id', (req, res) => {
-    const id = req.params.id;
-    
-    // Primeiro buscamos o estado atual
-    db.get("SELECT pago FROM vales WHERE id = ?", [id], (err, row) => {
-        if (row) {
-            const novoStatus = row.pago === 0 ? 1 : 0;
-            db.run("UPDATE vales SET pago = ? WHERE id = ?", [novoStatus, id], () => {
-                res.redirect('/relatorio'); // Volta para a página anterior (relatório)
-            });
-        }
-    });
-});
 
 // --- ROTAS DE UNIDADES ---
 app.get('/unidades', (req, res) => {
@@ -171,7 +166,6 @@ app.post('/unidades/deletar/:id', (req, res) => {
     });
 });
 
-// No final do app.js, altere o listen:
 app.listen(PORT, () => {
     console.log(`Servidor rodando em ambiente ${process.env.NODE_ENV} na porta ${PORT}`);
 });
