@@ -33,27 +33,26 @@ Git para versionamento.
 2. Configuração no Windows (Desenvolvimento)
 Clone o repositório:
 
-Bash
-
+```
 git clone https://github.com/Kombait98/Sistemas_vale.git
 cd Sistemas_vale
+```
 Instale as dependências:
 
-Bash
-
+```
 npm install
+```
 Crie um arquivo .env na raiz do projeto (use o .env.example como base):
-
-Plaintext
-
+```Plaintext
 PORT=3000
 APP_SECRET=sua_chave_secreta_aqui
 DB_PATH=./database.sqlite
+```
 Inicie o servidor:
 
-Bash
-
+```
 node app.js
+```
 3. Primeiro Acesso (Admin)
 Na primeira execução, o sistema cria automaticamente o usuário administrador:
 
@@ -66,23 +65,23 @@ Para rodar em um servidor Linux de forma contínua:
 
 Instale o PM2 globalmente:
 
-Bash
-
+```
 sudo npm install -g pm2
+```
 Inicie a aplicação com PM2:
 
-Bash
-
+```
 pm2 start app.js --name "sistemas-vale"
+```
 Para atualizar o servidor após alterações no Git:
 
-Bash
-
+```
 git pull origin main
 npm install
 pm2 restart sistemas-vale
+```
 📂 Estrutura do Projeto
-Plaintext
+```Plaintext
 
 Sistemas_vale/
 ├── views/              # Telas em EJS
@@ -95,19 +94,15 @@ Sistemas_vale/
 ├── database.js         # Configuração do SQLite e Tabelas
 ├── .env                # Variáveis de ambiente (ignorado pelo Git)
 └── .gitignore          # Filtro de arquivos para o repositório
+```
 ⚙️ Regras de Negócio e Funcionalidades
 Identificação Automática: O sistema identifica o colaborador logado e vincula seu nome automaticamente ao cadastro do vale.
 
 Workflow de Status:
 
 Pendente: Estado inicial após o cadastro.
-
 Autorizado: Somente estes aparecem no relatório financeiro.
-
 Recusado: Mantido no histórico, mas ignorado nos cálculos.
-
 Gestão de Unidades: Cadastro via Sigla (Ex: SPO) com exibição automática do Nome Completo (Ex: São Paulo - Matriz) nos relatórios via SQL Joins.
-
 Segurança: Senhas criptografadas e proteção de rotas (checkAuth e checkAdmin).
-
 Tooltips Dinâmicos: Observações e motivos de deslocamento são exibidos ao passar o mouse sobre o ícone de chat.
