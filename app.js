@@ -1,8 +1,11 @@
 // 1. Importações
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+console.log("Caminho do projeto:", __dirname);
+console.log("Variável APP_SECRET carregada:", process.env.APP_SECRET ? "Sim" : "Nao");
 const express = require('express');
 const session = require('express-session');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const db = require('./database');
 const app = express();
 const PORT = process.env.PORT || 3000;

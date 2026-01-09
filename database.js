@@ -1,7 +1,9 @@
-require('dotenv').config();
-const sqlite3 = require('sqlite3').verbose();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+console.log("Caminho do projeto:", __dirname);
+console.log("Variável APP_SECRET carregada:", process.env.APP_SECRET ? "Sim" : "Nao");const sqlite3 = require('sqlite3').verbose();
 const dbPath = process.env.DB_PATH || './database.sqlite';
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const db = new sqlite3.Database(dbPath);
 db.serialize(() => {
     // Tabela de Vales

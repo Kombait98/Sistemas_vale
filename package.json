@@ -20,6 +20,7 @@
   "homepage": "https://github.com/Kombait98/Sistemas_vale#readme",
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.3",
     "body-parser": "^2.2.1",
     "bootstrap": "^5.3.8",
     "dotenv": "^17.2.3",
