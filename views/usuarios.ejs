@@ -61,6 +61,38 @@
                             <span class="text-muted small">Protegido</span>
                         <% } %>
                     </td>
+                                        <td>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#resetModal<%= u.id %>">
+                                Reset Senha
+                            </button>
+
+                            </div>
+
+                        <div class="modal fade" id="resetModal<%= u.id %>" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <form action="/usuarios/reset-senha/<%= u.id %>" method="POST">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Resetar Senha: <%= u.nome %></h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="mb-3 text-start">
+                                                <label class="form-label">Nova Senha</label>
+                                                <input type="password" name="novaSenha" class="form-control" required placeholder="Digite a nova senha">
+                                            </div>
+                                            <p class="text-muted small text-start">Ao confirmar, a senha antiga será substituída imediatamente.</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                            <button type="submit" class="btn btn-danger">Confirmar Novo Reset</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
                 </tr>
             <% }) %>
         </tbody>

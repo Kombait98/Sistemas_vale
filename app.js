@@ -128,7 +128,7 @@ app.get('/usuarios',checkAuth, checkAdmin,  (req, res) => {
 });
 
 
-// --- ATUALIZADO: Rota para criar novo usuário ---
+// ---Rota para criar novo usuário ---
 app.post('/usuarios/novo', checkAuth, checkAdmin, async (req, res) => {
     const { login, nome, senha, permissao } = req.body;
     
@@ -149,7 +149,7 @@ app.post('/usuarios/novo', checkAuth, checkAdmin, async (req, res) => {
     }
 });
 
-// --- NOVO: Rota para alterar permissão ---
+// --- Rota para alterar permissão ---
 app.post('/usuarios/editar-permissao/:id', checkAuth, checkAdmin, (req, res) => {
     const { permissao } = req.body;
     const { id } = req.params;
@@ -170,6 +170,29 @@ app.post('/usuarios/deletar/:id', checkAuth, checkAdmin,(req, res) => {
         }
         res.redirect('/usuarios');
     });
+});
+app.post('/usuarios/reset-senha/:id', checkAuth, checkAdmin, async (req, res) => {
+    const { novaSenha } = req.body;
+    const { id } = req.params;
+
+    if (!novaSenha || novaSenha.length < 4) {
+        return res.send("A senha deve ter pelo menos 4 caracteres. <a href='/usuarios'>Voltar</a>");
+    }
+
+    try {
+        // Gera o novo hash da senha
+        const hash = await bcrypt.hash(novaSenha, 10);
+        
+        db.run("UPDATE usuarios SET senha = ? WHERE id = ?", [hash, id], (err) => {
+            if (err) {
+                console.error(err);
+                return res.status(500).send("Erro ao atualizar a senha no banco.");
+            }
+            res.redirect('/usuarios');
+        });
+    } catch (e) {
+        res.status(500).send("Erro ao processar a criptografia.");
+    }
 });
 
 
