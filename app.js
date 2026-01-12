@@ -311,6 +311,34 @@ app.post('/unidades/deletar/:id',checkAuth, checkAdmin, (req, res) => {
     });
 });
 
+// --- ROTA PARA O PRÓPRIO USUÁRIO ALTERAR SENHA NA TELA DE LOGIN ---
+app.post('/login/alterar-senha', async (req, res) => {
+    const { login, senhaAtual, novaSenha } = req.body;
+
+    if (!login || !senhaAtual || !novaSenha) {
+        return res.send("Todos os campos são obrigatórios. <a href='/login'>Voltar</a>");
+    }
+
+    db.get("SELECT * FROM usuarios WHERE login = ?", [login], async (err, user) => {
+        if (err) return res.status(500).send("Erro no banco de dados.");
+        
+        // Verifica se o usuário existe e se a senha atual está correta
+        if (user && await bcrypt.compare(senhaAtual, user.senha)) {
+            try {
+                const novoHash = await bcrypt.hash(novaSenha, 10);
+                db.run("UPDATE usuarios SET senha = ? WHERE id = ?", [novoHash, user.id], (err) => {
+                    if (err) return res.status(500).send("Erro ao atualizar senha.");
+                    res.send("Senha alterada com sucesso! <a href='/login'>Clique aqui para logar</a>");
+                });
+            } catch (e) {
+                res.status(500).send("Erro ao processar criptografia.");
+            }
+        } else {
+            res.send("Login ou senha atual incorretos. <a href='/login'>Tentar novamente</a>");
+        }
+    });
+});
+
 app.listen(PORT, () => {
     console.log(`Servidor rodando em ambiente ${process.env.NODE_ENV} na porta ${PORT}`);
 });
