@@ -2,6 +2,7 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
 const session = require('express-session');
+const { checkAuth, checkAdmin } = require('./middlewares/auth');
 const app = express();
 
 // Configurações Base
@@ -17,8 +18,23 @@ app.use(session({
 }));
 
 // Middleware Global para View
+// Middleware para passar dados para as views automaticamente
 app.use((req, res, next) => {
     res.locals.usuarioLogado = req.session.user || null;
+
+    // Detectar o módulo ativo com base no caminho da URL (Path)
+    const path = req.path;
+    
+    if (path.startsWith('/vales')) {
+        res.locals.moduloAtivo = 'vales';
+    } else if (path.startsWith('/travels')) {
+        res.locals.moduloAtivo = 'travels';
+    } else if (path.startsWith('/fluxo')) {
+        res.locals.moduloAtivo = 'fluxo';
+    } else {
+        res.locals.moduloAtivo = null; // Caso esteja na tela de seleção de módulos
+    }
+
     next();
 });
 
@@ -34,13 +50,8 @@ app.use('/vales', valesRoutes); // Tudo de vales agora começa com /vales
 //app.use('/travels', travelsRoutes);
 //app.use('/fluxo', fluxoRoutes);
 // Rota de entrada do sistema
-app.get('/', (req, res) => {
-    if (req.session.user) {
-        // Se estiver logado, vai para a aplicação de Vales
-        return res.redirect('/vales');
-    }
-    // Se não estiver logado, vai para o login
-    res.redirect('/login');
+app.get('/', checkAuth, (req, res) => {
+    res.render('modulos'); // Renderiza a nova tela de botões grandes
 });
 
 const PORT = process.env.PORT || 3000;

@@ -1,8 +1,19 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4 shadow">
     <div class="container">
-        <a class="navbar-brand d-flex align-items-center" href="/vales">
-            <i class="bi bi-box-seam me-2"></i> Sistemas Vale
-        </a>
+        
+            <% if (usuarioLogado) { %>
+                <% if (moduloAtivo === 'vales') { %>
+                    <a class="navbar-brand d-flex align-items-center" href="/vales">
+                        <i class="bi bi-box-seam me-2"></i> Sistemas Vale
+                    </a>
+                <% } %>
+                <% if (moduloAtivo === 'travels') { %>
+                    <a class="navbar-brand d-flex align-items-center" href="/vales">
+                        <i class="bi bi-box-seam me-2"></i> Sistemas Relatório Viagens
+                    </a>
+                <% } %>
+
+    <% } %>
 
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
                 aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -11,35 +22,49 @@
 
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="/vales">Novo Vale</a>
-                </li>
 
-                <li class="nav-item">
-                    <a class="nav-link" href="/vales/relatorio">Relatório</a>
-                </li>
 
-                <% if (usuarioLogado && usuarioLogado.permissao === 'admin') { %>
+    <% if (moduloAtivo === 'vales') { %>
+        <li class="nav-item">
+            <a class="nav-link" href="/vales">Novo Vale</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="/vales/relatorio">Relatório</a>
+        </li>
+    <% } %>
+
+    <% if (moduloAtivo === 'travels') { %>
+        <li class="nav-item"><a class="nav-link" href="/travels/novo">Nova Viagem</a></li>
+        <li class="nav-item"><a class="nav-link" href="/travels/gastos">Meus Gastos</a></li>
+    <% } %>
+
+    <% if (usuarioLogado && usuarioLogado.permissao === 'admin') { %>
+
+                <% if (moduloAtivo === 'vales') { %>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle text-warning" href="#" id="adminDropdown" role="button" 
-                           data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-gear-fill"></i> Administração
+                        <a class="nav-link dropdown-toggle text-warning" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-gear-fill"></i> Administração
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="adminDropdown">
-                            <li><a class="dropdown-item" href="/vales/autorizacao"><i class="bi bi-check2-square"></i> Autorizações</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="/unidades"><i class="bi bi-building"></i> Gerenciar Unidades</a></li>
-                            <li><a class="dropdown-item" href="/usuarios"><i class="bi bi-people"></i> Gerenciar Usuários</a></li>
-                        </ul>
-                    </li>
+                    <ul class="dropdown-menu dropdown-menu-dark">
+                        <li><a class="dropdown-item" href="/vales/autorizacao">Autorizações</a></li>
+                        <li><a class="dropdown-item" href="/unidades">Unidades</a></li>
+                        <li><a class="dropdown-item" href="/usuarios">Usuários</a></li>
                 <% } %>
             </ul>
+        </li>
+    <% } %>
+</ul>
 
             <div class="d-flex align-items-center">
                 <span class="navbar-text me-3 text-white-50">
                     <i class="bi bi-person-circle"></i> <%= usuarioLogado.nome %> 
                     <span class="badge bg-secondary ms-1" style="font-size: 0.7rem;"><%= usuarioLogado.permissao %></span>
                 </span>
+                 <li class="nav-item">
+                            <a class="nav-link fw-bold text-info" href="/">
+                            <i class="bi bi-grid-3x3-gap-fill"></i> Trocar Módulo
+                            </a>
+                </li>
                 <a href="/logout" class="btn btn-outline-danger btn-sm">
                     <i class="bi bi-box-arrow-right"></i> Sair
                 </a>

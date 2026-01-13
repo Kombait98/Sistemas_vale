@@ -10,15 +10,21 @@ router.get('/login', (req, res) => {
     res.render('login'); // login.ejs geralmente fica na raiz de views
 });
 
+// routes/auth.js - Localize a rota POST /login
+
 router.post('/login', (req, res) => {
     const { login, senha } = req.body;
     
     db.get("SELECT * FROM usuarios WHERE login = ?", [login], async (err, user) => {
-        if (err) return res.status(500).send("Erro no banco de dados");
+        if (err) {
+            console.error("Erro no Banco:", err);
+            return res.status(500).send("Erro no banco de dados");
+        }
 
         if (user) {
             const senhaCorreta = await bcrypt.compare(senha, user.senha);
             if (senhaCorreta) {
+                // SUCESSO: Definindo os dados da sessão
                 req.session.user = {
                     id: user.id,
                     nome: user.nome,
@@ -26,12 +32,17 @@ router.post('/login', (req, res) => {
                     login: user.login
                 };
 
-                return req.session.save(() => {
-                    res.redirect('/vales'); // Redireciona para a nova home modularizada
+                // O 'return' aqui é CRUCIAL para não executar o código abaixo
+                return req.session.save((err) => {
+                    if (err) return res.status(500).send("Erro ao salvar sessão");
+                    res.redirect('/'); 
                 });
             }
         }
-        res.send("Usuário ou senha inválidos. <a href='/login'>Tentar novamente</a>");
+        
+        // Se chegou aqui, é porque o user não existe OU a senha está errada
+        // Só enviamos esta resposta se o redirecionamento lá de cima NÃO aconteceu
+        return res.send("Usuário ou senha inválidos. <a href='/login'>Tentar novamente</a>");
     });
 });
 
@@ -115,5 +126,6 @@ router.post('/unidades/deletar/:id', checkAuth, checkAdmin, (req, res) => {
         res.redirect('/unidades');
     });
 });
+
 
 module.exports = router;
