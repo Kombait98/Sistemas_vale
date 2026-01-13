@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <title>Gerenciar Unidades - Sistemas Vale</title>
+</head>
+<body class="container-fluid mt-1">
+    
+    <%- include('../partials/navbar') %>
+
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-building"></i> Gerenciar Unidades</h2>
+            <a href="/vales" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left"></i> Voltar ao Cadastro
+            </a>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body bg-light">
+                <form action="/unidades/novo" method="POST" class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label font-weight-bold">Sigla</label>
+                        <input type="text" name="sigla" class="form-control" placeholder="EX: SPO" required maxlength="5">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label font-weight-bold">Nome Completo</label>
+                        <input type="text" name="nome" class="form-control" placeholder="EX: São Paulo - Matriz" required>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="bi bi-plus-circle"></i> Cadastrar Unidade
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="table-responsive shadow-sm rounded">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th style="width: 20%;">Sigla</th>
+                        <th>Nome da Unidade</th>
+                        <th class="text-center" style="width: 15%;">Ação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% unidades.forEach(u => { %>
+                        <tr>
+                            <td><span class="badge bg-primary fs-6"><%= u.sigla %></span></td>
+                            <td><%= u.nome %></td>
+                            <td class="text-center">
+                                <form action="/unidades/deletar/<%= u.id %>" method="POST" 
+                                      onsubmit="return confirm('Tem certeza que deseja excluir esta unidade? Isso pode afetar relatórios existentes.')">
+                                    <button class="btn btn-outline-danger btn-sm">
+                                        <i class="bi bi-trash"></i> Excluir
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    <% }) %>
+                    <% if (unidades.length === 0) { %>
+                        <tr>
+                            <td colspan="3" class="text-center py-4 text-muted">Nenhuma unidade cadastrada.</td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
