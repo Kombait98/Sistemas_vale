@@ -28,33 +28,43 @@
         <div class="card mb-4 shadow-sm">
     <div class="card-body bg-light">
         <form action="/vales/relatorio" method="GET" class="row g-3" id="formFiltro">
-            <div class="col-md-4">
-                <label class="form-label font-weight-bold">Filtrar por Usuário</label>
-                <select name="usuario" class="form-select">
-                    <option value="">Todos os Colaboradores</option>
-                    <% usuarios.forEach(u => { %>
-                        <option value="<%= u.nome %>" <%= filtroUsuario === u.nome ? 'selected' : '' %>>
-                            <%= u.nome %>
-                        </option>
-                    <% }) %>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label font-weight-bold">Filtrar por Mês</label>
-                <input type="month" name="mes" class="form-control" value="<%= filtroMes %>">
-            </div>
-            <div class="col-md-4 d-flex align-items-end gap-2">
-                <button type="submit" class="btn btn-primary w-100">
-                    <i class="bi bi-filter"></i> Filtrar
-                </button>
-                
-                <button type="button" onclick="exportarCSV()" class="btn btn-success w-100">
-                    Baixar Report 
-                </button>
+    <div class="col-md-4">
+        <label class="form-label font-weight-bold">Filtrar por Usuário</label>
+        <select name="usuario" class="form-select">
+            <option value="">Todos os Colaboradores</option>
+            <% usuarios.forEach(u => { %>
+                <option value="<%= u.nome %>" <%= filtroUsuario === u.nome ? 'selected' : '' %>>
+                    <%= u.nome %>
+                </option>
+            <% }) %>
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label class="form-label font-weight-bold">Filtrar por Mês</label>
+        <input type="month" name="mes" class="form-control" value="<%= filtroMes %>">
+    </div>
 
-                <a href="/vales/relatorio" class="btn btn-outline-secondary">Limpar</a>
-            </div>
-        </form>
+    <div class="col-md-4 d-flex align-items-center mt-auto pb-2">
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="incluirPendentes" id="checkPendentes">
+            <label class="form-check-label" for="checkPendentes">
+                Incluir vales <strong>Pendentes</strong> no CSV
+            </label>
+        </div>
+    </div>
+
+    <div class="col-md-12 d-flex justify-content-end gap-2 mt-3">
+        <button type="submit" class="btn btn-primary px-4">
+            <i class="bi bi-filter"></i> Filtrar Tela
+        </button>
+        
+        <button type="button" onclick="exportarCSV()" class="btn btn-success px-4">
+            <i class="bi bi-file-earmark-excel"></i> Baixar Report CSV
+        </button>
+
+        <a href="/vales/relatorio" class="btn btn-outline-secondary px-4">Limpar</a>
+    </div>
+</form>
     </div>
 </div>
 
@@ -150,13 +160,16 @@
     <script>
         // Inicialização dos Tooltips
         function exportarCSV() {
-        // Pega os valores atuais dos filtros
         const form = document.getElementById('formFiltro');
-        const usuario = form.usuario.value;
-        const mes = form.mes.value;
+        
+        const usuario = form.querySelector('[name="usuario"]').value;
+        const mes = form.querySelector('[name="mes"]').value;
+        // Captura se o checkbox está marcado ou não
+        const incluirPendentes = form.querySelector('[name="incluirPendentes"]').checked;
 
-        // Redireciona para a rota de exportação com os parâmetros
-        window.location.href = `/vales/relatorio/exportar?usuario=${usuario}&mes=${mes}`;
+        const url = `/vales/relatorio/exportar?usuario=${encodeURIComponent(usuario)}&mes=${encodeURIComponent(mes)}&pendentes=${incluirPendentes}`;
+        
+        window.location.href = url;
     }
         document.addEventListener('DOMContentLoaded', function () {
             const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')

@@ -119,11 +119,16 @@ router.post('/alternar-pagamento/:id', checkAuth, checkAdmin, (req, res) => {
 });
 // Rota para exportar CSV de vales PAGOS
 router.get('/relatorio/exportar', checkAuth, (req, res) => {
-    const { usuario, mes } = req.query;
+    const { usuario, mes, pendentes } = req.query;
 
-    // Filtramos obrigatoriamente por PAGO = 1 e STATUS = 1 (Autorizado)
-    let sql = `${queryJoin} WHERE v.status = 1 AND v.pago = 1`;
+    // Base da query: Sempre filtramos por vales autorizados (status=1)
+    let sql = `${queryJoin} WHERE v.status = 1`;
     let params = [];
+
+    // Se o usuário NÃO marcou para incluir pendentes, filtramos apenas os pagos
+    if (pendentes !== 'true') {
+        sql += " AND v.pago = 1";
+    }
 
     if (usuario && usuario !== "") {
         sql += " AND v.usuario = ?";
@@ -140,19 +145,19 @@ router.get('/relatorio/exportar', checkAuth, (req, res) => {
     db.all(sql, params, (err, rows) => {
         if (err) return res.status(500).send("Erro ao gerar relatório");
 
-        // Cabeçalho do CSV (padrão Excel com ponto e vírgula para PT-BR)
-        let csv = 'Colaborador;Data;Saida;Chegada;Motivo;Total (R$)\n';
+        // Adicionamos a coluna "Pagamento" no cabeçalho
+        let csv = 'Colaborador;Data;Saida;Chegada;Motivo;Pagamento;Total (R$)\n';
 
         rows.forEach(r => {
-            csv += `${r.usuario};${r.data};${r.nome_saida};${r.nome_chegada};${r.motivo || 'N/A'};${r.total_linha.toFixed(2)}\n`;
+            const statusPagamento = r.pago === 1 ? 'PAGO' : 'PENDENTE';
+            csv += `${r.usuario};${r.data};${r.nome_saida};${r.nome_chegada};${r.motivo || 'N/A'};${statusPagamento};${r.total_linha.toFixed(2)}\n`;
         });
 
-        // Configura o navegador para entender que é um download de arquivo
-        const fileName = `relatorio_pagos_${mes || 'geral'}.csv`;
+        const fileName = `relatorio_vales_${mes || 'geral'}.csv`;
         res.setHeader('Content-Type', 'text/csv; charset=utf-8');
         res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
         
-        // Envia o conteúdo com BOM (Byte Order Mark) para o Excel reconhecer acentos
+        // \uFEFF é o BOM para o Excel abrir com acentos corretos
         res.send('\uFEFF' + csv);
     });
 });
