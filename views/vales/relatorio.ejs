@@ -5,6 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+@media print {
+    .navbar, .btn, .card, .alert, .mb-5 {
+        display: none !important; /* Esconde tudo que não é a tabela ao imprimir */
+    }
+    .table {
+        width: 100% !important;
+        border: 1px solid #000;
+    }
+}
+</style>
     <title>Conferência de Valores - Vales</title>
 </head>
 <body class="container-fluid mt-1">
@@ -15,32 +26,37 @@
         <h2 class="mb-4">Conferência de Valores</h2>
 
         <div class="card mb-4 shadow-sm">
-            <div class="card-body bg-light">
-                <form action="/vales/relatorio" method="GET" class="row g-3">
-                    <div class="col-md-4">
-                        <label class="form-label font-weight-bold">Filtrar por Usuário</label>
-                        <select name="usuario" class="form-select">
-                            <option value="">Todos os Colaboradores</option>
-                            <% usuarios.forEach(u => { %>
-                                <option value="<%= u.nome %>" <%= filtroUsuario === u.nome ? 'selected' : '' %> >
-                                    <%= u.nome %>
-                                </option>
-                            <% }) %>
-                        </select>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label font-weight-bold">Filtrar por Mês</label>
-                        <input type="month" name="mes" class="form-control" value="<%= filtroMes %>">
-                    </div>
-                    <div class="col-md-4 d-flex align-items-end gap-2">
-                        <button type="submit" class="btn btn-primary w-100">
-                            <i class="bi bi-filter"></i> Filtrar
-                        </button>
-                        <a href="/vales/relatorio" class="btn btn-outline-secondary">Limpar</a>
-                    </div>
-                </form>
+    <div class="card-body bg-light">
+        <form action="/vales/relatorio" method="GET" class="row g-3" id="formFiltro">
+            <div class="col-md-4">
+                <label class="form-label font-weight-bold">Filtrar por Usuário</label>
+                <select name="usuario" class="form-select">
+                    <option value="">Todos os Colaboradores</option>
+                    <% usuarios.forEach(u => { %>
+                        <option value="<%= u.nome %>" <%= filtroUsuario === u.nome ? 'selected' : '' %>>
+                            <%= u.nome %>
+                        </option>
+                    <% }) %>
+                </select>
             </div>
-        </div>
+            <div class="col-md-4">
+                <label class="form-label font-weight-bold">Filtrar por Mês</label>
+                <input type="month" name="mes" class="form-control" value="<%= filtroMes %>">
+            </div>
+            <div class="col-md-4 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-filter"></i> Filtrar
+                </button>
+                
+                <button type="button" onclick="exportarCSV()" class="btn btn-success w-100">
+                    Baixar Report 
+                </button>
+
+                <a href="/vales/relatorio" class="btn btn-outline-secondary">Limpar</a>
+            </div>
+        </form>
+    </div>
+</div>
 
         <div class="table-responsive shadow-sm rounded">
             <table class="table table-hover align-middle mb-0">
@@ -133,10 +149,20 @@
 
     <script>
         // Inicialização dos Tooltips
+        function exportarCSV() {
+        // Pega os valores atuais dos filtros
+        const form = document.getElementById('formFiltro');
+        const usuario = form.usuario.value;
+        const mes = form.mes.value;
+
+        // Redireciona para a rota de exportação com os parâmetros
+        window.location.href = `/vales/relatorio/exportar?usuario=${usuario}&mes=${mes}`;
+    }
         document.addEventListener('DOMContentLoaded', function () {
             const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
             const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
         });
+
     </script>
 </body>
 </html>

@@ -117,5 +117,44 @@ router.post('/alternar-pagamento/:id', checkAuth, checkAdmin, (req, res) => {
         }
     });
 });
+// Rota para exportar CSV de vales PAGOS
+router.get('/relatorio/exportar', checkAuth, (req, res) => {
+    const { usuario, mes } = req.query;
+
+    // Filtramos obrigatoriamente por PAGO = 1 e STATUS = 1 (Autorizado)
+    let sql = `${queryJoin} WHERE v.status = 1 AND v.pago = 1`;
+    let params = [];
+
+    if (usuario && usuario !== "") {
+        sql += " AND v.usuario = ?";
+        params.push(usuario);
+    }
+
+    if (mes && mes !== "") {
+        sql += " AND strftime('%Y-%m', v.data) = ?";
+        params.push(mes);
+    }
+
+    sql += " ORDER BY v.data ASC";
+
+    db.all(sql, params, (err, rows) => {
+        if (err) return res.status(500).send("Erro ao gerar relatório");
+
+        // Cabeçalho do CSV (padrão Excel com ponto e vírgula para PT-BR)
+        let csv = 'Colaborador;Data;Saida;Chegada;Motivo;Total (R$)\n';
+
+        rows.forEach(r => {
+            csv += `${r.usuario};${r.data};${r.nome_saida};${r.nome_chegada};${r.motivo || 'N/A'};${r.total_linha.toFixed(2)}\n`;
+        });
+
+        // Configura o navegador para entender que é um download de arquivo
+        const fileName = `relatorio_pagos_${mes || 'geral'}.csv`;
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
+        
+        // Envia o conteúdo com BOM (Byte Order Mark) para o Excel reconhecer acentos
+        res.send('\uFEFF' + csv);
+    });
+});
 
 module.exports = router;
