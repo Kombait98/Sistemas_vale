@@ -12,6 +12,16 @@
                         <i class="bi bi-box-seam me-2"></i> Sistemas Relatório Viagens
                     </a>
                 <% } %>
+                <% if (moduloAtivo === 'fluxo') { %>
+                    <a class="navbar-brand d-flex align-items-center" href="/vales">
+                        <i class="bi bi-box-seam me-2"></i> Sistema de E/S equipamentos
+                    </a>
+                <% } %>
+                <% if (moduloAtivo !== 'travels' && moduloAtivo !== 'fluxo' && moduloAtivo !== 'vales') { %>
+                    <a class="navbar-brand d-flex align-items-center" href="/">
+                        <i class="bi bi-box-seam me-2"></i> Modulos - ASLANTI
+                    </a>
+                <% } %>
 
     <% } %>
 
@@ -60,11 +70,14 @@
                     <i class="bi bi-person-circle"></i> <%= usuarioLogado.nome %> 
                     <span class="badge bg-secondary ms-1" style="font-size: 0.7rem;"><%= usuarioLogado.permissao %></span>
                 </span>
-                 <li class="nav-item">
+                <% if (moduloAtivo === 'travels' || moduloAtivo === 'fluxo' || moduloAtivo === 'vales') { %>
+                            <li class="nav-item">
                             <a class="nav-link fw-bold text-info" href="/">
                             <i class="bi bi-grid-3x3-gap-fill"></i> Trocar Módulo
                             </a>
                 </li>
+                <% } %>
+
                 <a href="/logout" class="btn btn-outline-danger btn-sm">
                     <i class="bi bi-box-arrow-right"></i> Sair
                 </a>
