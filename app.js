@@ -31,8 +31,12 @@ app.use((req, res, next) => {
         res.locals.moduloAtivo = 'travels';
     } else if (path.startsWith('/fluxo')) {
         res.locals.moduloAtivo = 'fluxo';
-    } else {
-        res.locals.moduloAtivo = null; // Caso esteja na tela de seleção de módulos
+    } else if (path.startsWith('/unidades')) {
+        res.locals.moduloAtivo = 'unidades';
+    }else if(path.startsWith('/usuarios')){
+        res.locals.moduloAtivo = 'usuarios'
+    }else{
+        res.locals.moduloAtivo = null; 
     }
 
     next();
@@ -46,12 +50,12 @@ const valesRoutes = require('./routes/vales');
 
 // USO DAS ROTAS (Prefixos)
 app.use('/', authRoutes);      // Login e gestão de base
-app.use('/vales', valesRoutes); // Tudo de vales agora começa com /vales
+app.use('/vales', valesRoutes);
 //app.use('/travels', travelsRoutes);
 //app.use('/fluxo', fluxoRoutes);
 // Rota de entrada do sistema
 app.get('/', checkAuth, (req, res) => {
-    res.render('modulos'); // Renderiza a nova tela de botões grandes
+    res.render('modulos'); 
 });
 
 const PORT = process.env.PORT || 3000;
