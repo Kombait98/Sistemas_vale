@@ -44,7 +44,7 @@ router.post('/cadastrar', checkAuth, (req, res) => {
     
     db.run(query, [usuario, data, saida, chegada, quantidade, valor, motivo], (err) => {
         if (err) return res.status(500).send("Erro ao salvar vale");
-        res.redirect('/vales/relatorio');
+        res.redirect('/vales/relatorio?sucesso=1');
     });
 });
 
