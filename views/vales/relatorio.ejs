@@ -84,7 +84,7 @@
                     <% registros.forEach(r => { %>
                         <tr class="<%= r.pago === 1 ? 'table-success' : '' %>"> 
                             <td><strong><%= r.usuario %></strong></td>
-                            <td><%= r.data %></td>
+                            <td><%= r.data_formatada %></td>
                             <td>
                                 <%= r.nome_saida %> <i class="bi bi-arrow-right text-muted"></i> <%= r.nome_chegada %>
                                 <% if (r.motivo) { %>

@@ -1,75 +1,71 @@
+const { Pool } = require('pg');
 const path = require('path');
-const sqlite3 = require('sqlite3').verbose();
 const bcrypt = require('bcryptjs');
-
-// 1. Configuração de Variáveis de Ambiente
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
-const dbPath = process.env.DB_PATH || './database.sqlite';
-const db = new sqlite3.Database(dbPath);
-
-console.log("Caminho do projeto:", __dirname);
-console.log("Variável APP_SECRET carregada:", process.env.APP_SECRET ? "Sim" : "Nao");
-
-// 2. Inicialização do Banco de Dados
-db.serialize(() => {
-    
-    // --- Tabela de Vales ---
-    db.run(`CREATE TABLE IF NOT EXISTS vales (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        usuario TEXT,
-        data TEXT,
-        saida TEXT,
-        chegada TEXT,
-        quantidade INTEGER,
-        valor_unitario REAL,
-        motivo TEXT
-    )`);
-
-    // Atualizações de Schema (Adição de colunas caso não existam)
-    db.run("ALTER TABLE vales ADD COLUMN pago INTEGER DEFAULT 0", (err) => {
-        if (err) { /* Coluna já existe */ }
-    });
-    db.run("ALTER TABLE vales ADD COLUMN status INTEGER DEFAULT 0", (err) => {
-        if (err) { /* Coluna já existe */ }
-    });
-
-    // --- Tabela de Usuários ---
-    db.run(`CREATE TABLE IF NOT EXISTS usuarios (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        login TEXT UNIQUE,
-        nome TEXT,
-        senha TEXT,
-        permissao TEXT DEFAULT 'colaborador'
-    )`, async () => {
-        
-        // Criar o usuário ADMIN automático se não existir
-        const adminLogin = 'admin';
-        const adminSenha = process.env.APP_SECRET; 
-        
-        if (adminSenha) {
-            db.get("SELECT * FROM usuarios WHERE login = ?", [adminLogin], async (err, row) => {
-                if (!row) {
-                    try {
-                        const hash = await bcrypt.hash(adminSenha, 10);
-                        db.run("INSERT INTO usuarios (login, nome, senha, permissao) VALUES (?, ?, ?, ?)",
-                            [adminLogin, 'Administrador do Sistema', hash, 'admin']);
-                        console.log("Usuário ADMIN criado com sucesso.");
-                    } catch (e) {
-                        console.error("Erro ao gerar senha do ADMIN:", e);
-                    }
-                }
-            });
-        }
-    });
-
-    // --- Tabela de Unidades ---
-    db.run(`CREATE TABLE IF NOT EXISTS unidades (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        sigla TEXT UNIQUE,
-        nome TEXT
-    )`);
-
+const pool = new Pool({
+    user: process.env.DB_USER,
+    host: process.env.DB_HOST,
+    database: process.env.DB_NAME,
+    password: process.env.DB_PASS,
+    port: process.env.DB_PORT,
 });
 
-module.exports = db;
+const initDB = async () => {
+    try {
+        // Tabela de Unidades
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS unidades (
+                id SERIAL PRIMARY KEY,
+                sigla TEXT UNIQUE NOT NULL,
+                nome TEXT NOT NULL
+            )
+        `);
+
+        // Tabela de Usuários
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS usuarios (
+                id SERIAL PRIMARY KEY,
+                login TEXT UNIQUE NOT NULL,
+                nome TEXT NOT NULL,
+                senha TEXT NOT NULL,
+                permissao TEXT DEFAULT 'colaborador'
+            )
+        `);
+
+        // Tabela de Vales
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS vales (
+                id SERIAL PRIMARY KEY,
+                usuario TEXT,
+                data DATE,
+                saida INTEGER REFERENCES unidades(id),
+                chegada INTEGER REFERENCES unidades(id),
+                quantidade INTEGER,
+                valor_unitario NUMERIC(10,2),
+                motivo TEXT,
+                pago INTEGER DEFAULT 0,
+                status INTEGER DEFAULT 0
+            )
+        `);
+
+        // Criar Admin Inicial se não existir
+        const adminCheck = await pool.query("SELECT * FROM usuarios WHERE login = 'admin'");
+        if (adminCheck.rowCount === 0) {
+            const hash = await bcrypt.hash(process.env.APP_SECRET, 10);
+            await pool.query(
+                "INSERT INTO usuarios (login, nome, senha, permissao) VALUES ($1, $2, $3, $4)",
+                ['admin', 'Administrador', hash, 'admin']
+            );
+            console.log("✅ Usuário ADMIN criado no PostgreSQL.");
+        }
+
+        console.log("🚀 Tabelas verificadas/criadas com sucesso no Postgres.");
+    } catch (err) {
+        console.error("❌ Erro ao inicializar o Postgres:", err.message);
+    }
+};
+
+initDB();
+
+module.exports = pool;
