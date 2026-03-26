@@ -31,17 +31,12 @@ router.post('/login', (req, res) => {
                     permissao: user.permissao,
                     login: user.login
                 };
-
-                // O 'return' aqui é CRUCIAL para não executar o código abaixo
                 return req.session.save((err) => {
                     if (err) return res.status(500).send("Erro ao salvar sessão");
                     res.redirect('/'); 
                 });
             }
         }
-        
-        // Se chegou aqui, é porque o user não existe OU a senha está errada
-        // Só enviamos esta resposta se o redirecionamento lá de cima NÃO aconteceu
         return res.send("Usuário ou senha inválidos. <a href='/login'>Tentar novamente</a>");
     });
 });
@@ -71,7 +66,7 @@ router.post('/login/alterar-senha', async (req, res) => {
 
 router.get('/usuarios', checkAuth, checkAdmin, (req, res) => {
     db.all("SELECT * FROM usuarios ORDER BY nome", [], (err, rows) => {
-        res.render('vales/usuarios', { usuarios: rows }); // Caminho atualizado
+        res.render('vales/usuarios', { usuarios: rows }); 
     });
 });
 
@@ -110,7 +105,7 @@ router.post('/usuarios/deletar/:id', checkAuth, checkAdmin, (req, res) => {
 
 router.get('/unidades', checkAuth, checkAdmin, (req, res) => {
     db.all("SELECT * FROM unidades ORDER BY sigla", [], (err, rows) => {
-        res.render('vales/unidades', { unidades: rows }); // Caminho atualizado
+        res.render('vales/unidades', { unidades: rows }); 
     });
 });
 
