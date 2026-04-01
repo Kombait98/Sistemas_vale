@@ -60,15 +60,10 @@
                             <td><strong><%= u.nome %></strong></td>
                             <td><code><%= u.login %></code></td>
                             <td>
-                                <form action="/usuarios/editar-permissao/<%= u.id %>" method="POST" class="d-flex gap-2">
-                                    <select name="permissao" class="form-select form-select-sm" style="width: 140px;">
-                                        <option value="colaborador" <%= u.permissao === 'colaborador' ? 'selected' : '' %>>Colaborador</option>
-                                        <option value="admin" <%= u.permissao === 'admin' ? 'selected' : '' %>>Gerente</option>
-                                    </select>
-                                    <button type="submit" class="btn btn-primary btn-sm" title="Salvar Permissão">
-                                        <i class="bi bi-save"></i>
-                                    </button>
-                                </form>
+                                <button class="btn btn-sm btn-outline-primary" 
+                                        onclick="abrirModalPermissoes('<%= u.id %>', '<%= JSON.stringify(u.permissoes) %>', '<%= u.permissao %>')">
+                                    <i class="bi bi-shield-lock"></i> Permissões
+                                </button>
                             </td>
                             <td>
                                 <div class="d-flex gap-2 justify-content-center">
@@ -119,7 +114,80 @@
             </table>
         </div>
     </div>
+<div class="modal fade" id="modalPermissoes" tabindex="-1">
+    <div class="modal-dialog">
+        <form id="formPermissoes" method="POST">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title">Configurar Acessos</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning border-warning mb-3">
+                        <h6><i class="bi bi-person-badge-fill"></i> Configurações de Sistema</h6>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="admin_geral" id="g_admin">
+                            <label class="form-check-label fw-bold">Administrador Geral</label>
+                            <small class="d-block text-muted">Permite gerenciar usuários, unidades e configurações globais.</small>
+                        </div>
+                    </div>
+                <hr>
+                    <div class="card mb-3 p-3">
+                        <h6>Módulo Vales</h6>
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" name="vales_acesso" id="v_acesso">
+                            <label class="form-check-label">Habilitar Módulo</label>
+                        </div>
+                        <select name="vales_nivel" id="v_nivel" class="form-select form-select-sm">
+                            <option value="colaborador">Colaborador (Apenas Lançar)</option>
+                            <option value="gerente">Gerente (Autorizar/Pagar)</option>
+                        </select>
+                    </div>
 
+                    <div class="card p-3">
+                        <h6>Módulo Viagens (Travels)</h6>
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" name="travels_acesso" id="t_acesso">
+                            <label class="form-check-label">Habilitar Módulo</label>
+                        </div>
+                        <select name="travels_nivel" id="t_nivel" class="form-select form-select-sm">
+                            <option value="colaborador">Colaborador</option>
+                            <option value="gerente">Gerente</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">Salvar Permissões</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function abrirModalPermissoes(id, permissoesStr, permissaoGlobal) {
+    // 1. Converte a string JSON de volta para objeto
+    const permissoes = JSON.parse(permissoesStr);
+    const form = document.getElementById('formPermissoes');
+    
+    // 2. Define a rota de destino do formulário
+    form.action = `/usuarios/permissoes/${id}`;
+
+    // 3. LOGICA DO CHECKBOX ADMIN GERAL (O segredo está aqui)
+    // Se a permissãoGlobal for exatamente 'admin', ele marca como true
+    document.getElementById('g_admin').checked = (permissaoGlobal === 'admin');
+
+    // 4. LOGICA DOS MÓDULOS
+    document.getElementById('v_acesso').checked = permissoes.vales?.acesso || false;
+    document.getElementById('v_nivel').value = permissoes.vales?.nivel || 'colaborador';
+    
+    document.getElementById('t_acesso').checked = permissoes.travels?.acesso || false;
+    document.getElementById('t_nivel').value = permissoes.travels?.nivel || 'colaborador';
+
+    // 5. Abre o modal do Bootstrap
+    new bootstrap.Modal(document.getElementById('modalPermissoes')).show();
+}
+</script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

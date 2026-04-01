@@ -66,7 +66,12 @@
 </ul>
 
             <div class="d-flex align-items-center">
-                <span class="navbar-text me-3 text-white-50">
+                <% if (moduloAtivo !== 'travels' && moduloAtivo !== 'fluxo' && moduloAtivo !== 'vales' && moduloAtivo !== 'unidades' && moduloAtivo !== 'usuarios' && usuarioLogado.permissao === 'admin') { %>
+                    <li class="nav-item">
+                     <a class="nav-link" style="color: aliceblue;" href="/usuarios">Gerenciar usuarios</a>
+                    </li>
+                <% } %>
+                <span class="navbar-text me-3 text-white-50" style="margin-left: 15px;">
                     <i class="bi bi-person-circle"></i> <%= usuarioLogado.nome %> 
                     <span class="badge bg-secondary ms-1" style="font-size: 0.7rem;"><%= usuarioLogado.permissao %></span>
                 </span>

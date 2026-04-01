@@ -25,7 +25,8 @@ router.post('/login', async (req, res) => {
                     id: user.id,
                     nome: user.nome,
                     permissao: user.permissao,
-                    login: user.login
+                    login: user.login,
+                    permissoes: user.permissoes
                 };
                 
                 return req.session.save((err) => {
@@ -149,6 +150,38 @@ router.post('/unidades/deletar/:id', checkAuth, checkAdmin, async (req, res) => 
         res.redirect('/unidades');
     } catch (err) {
         res.status(500).send("Erro ao deletar unidade.");
+    }
+});
+router.post('/usuarios/permissoes/:id', checkAuth, checkAdmin, async (req, res) => {
+const { id } = req.params;
+    const { admin_geral, vales_acesso, vales_nivel, travels_acesso, travels_nivel } = req.body;
+
+    // 1. Define a string da permissão global
+    const permissaoGlobal = (admin_geral === 'on') ? 'admin' : 'colaborador';
+
+    // 2. Monta o objeto JSONB para os módulos
+    const novasPermissoesJSON = {
+        vales: {
+            acesso: vales_acesso === 'on',
+            nivel: vales_nivel
+        },
+        travels: {
+            acesso: travels_acesso === 'on',
+            nivel: travels_nivel
+        }
+    };
+
+    try {
+        // 3. Atualiza as duas colunas no PostgreSQL
+        await db.query(
+            "UPDATE usuarios SET permissao = $1, permissoes = $2 WHERE id = $3", 
+            [permissaoGlobal, JSON.stringify(novasPermissoesJSON), id]
+        );
+        
+        res.redirect('/usuarios');
+    } catch (err) {
+        console.error("Erro ao atualizar permissões:", err);
+        res.status(500).send("Erro interno ao salvar configurações.");
     }
 });
 

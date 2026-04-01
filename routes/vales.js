@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../database'); // Conexão Pool do PostgreSQL
-const { checkAuth, checkAdmin } = require('../middlewares/auth');
+const { checkAuth, checkModule,checkAdmin, checkNivel } = require('../middlewares/auth');
 
 // Query base compatível com PostgreSQL
 const queryJoin = `
@@ -16,7 +16,7 @@ const queryJoin = `
 `;
 
 // --- ROTA: FORMULÁRIO DE CADASTRO ---
-router.get('/', checkAuth, async (req, res) => {
+router.get('/', checkAuth,checkModule('vales'), async (req, res) => {
     try {
         const unidadesRes = await db.query("SELECT * FROM unidades ORDER BY sigla");
         const usuariosRes = await db.query("SELECT * FROM usuarios ORDER BY nome");
@@ -94,7 +94,7 @@ router.get('/relatorio', checkAuth, async (req, res) => {
 });
 
 // --- ROTA: AUTORIZAÇÃO ---
-router.get('/autorizacao', checkAuth, checkAdmin, async (req, res) => {
+router.get('/autorizacao', checkAuth, checkAdmin,checkModule('vales'), checkNivel('vales', 'gerente'), async (req, res) => {
     try {
         const sql = `${queryJoin} ORDER BY v.data DESC`;
         const result = await db.query(sql);
