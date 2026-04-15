@@ -1,108 +1,90 @@
-Sistema de Conferência de Vales de Passagens 🚌
-Este é um sistema web robusto e leve desenvolvido para a gestão, autorização e conferência financeira de vales de deslocamento de colaboradores.
 
-O projeto foi construído com foco em segurança de dados e workflow de aprovação, garantindo que apenas registros autorizados pelo gestor entrem nos cálculos financeiros finais.
 
-🛠️ Tecnologias Utilizadas
-Backend & Banco de Dados
-Node.js: Ambiente de execução Javascript no servidor.
+# Sistemas Vale 🚀
 
-Express: Framework para gestão de rotas e middlewares.
+Sistema modular para gestão de recursos corporativos, desenvolvido com foco em escalabilidade, segurança e interface intuitiva. Originalmente concebido para o controle de vales-transporte, o ecossistema está sendo expandido para gestão de viagens (Travels) e fluxos financeiros.
 
-SQLite3: Banco de dados relacional local, ideal para portabilidade e performance.
+## 🛠️ Stack Tecnológica
 
-Bcrypt: Criptografia de senhas para segurança de credenciais.
+* **Backend:** Node.js com Express.js
+* **Banco de Dados:** PostgreSQL (Migrado de SQLite para alta performance)
+* **Frontend:** EJS (Embedded JavaScript), Bootstrap 5 e SweetAlert2
+* **Autenticação:** Express-Session & BcryptJS
+* **Infraestrutura:** Suporte a variáveis de ambiente (`dotenv`)
 
-Express-Session: Controle de sessões e autenticação de usuários.
+---
 
-Dotenv: Gestão de variáveis de ambiente.
+## ✨ Funcionalidades Principais
 
-Frontend
-EJS (Embedded JavaScript Templates): Renderização dinâmica de HTML no servidor.
+### 🔐 Gestão de Acessos Avançada
+* **Permissões JSONB:** Implementação de controle de acesso modular armazenado em formato JSON diretamente no banco de dados.
+* **Níveis Hierárquicos:** Distinção entre *Administrador Geral*, *Gerente de Módulo* e *Colaborador*.
+* **Contextualização de Interface:** A Navbar e os menus se adaptam dinamicamente aos privilégios do usuário logado.
 
-Bootstrap 5: Framework CSS para design responsivo e moderno.
+### 🎫 Módulo de Vales
+* **Fluxo de Aprovação:** Cadastro de solicitações com status de "Pendente", "Autorizado" ou "Recusado".
+* **Gestão Financeira:** Controle de pagamentos integrado.
+* **Relatórios Dinâmicos:** Filtros por colaborador e competência (mês/ano).
+* **Exportação:** Geração de relatórios em CSV otimizados para Excel (com suporte a acentuação PT-BR).
 
-Bootstrap Icons: Ícones para interface intuitiva (Tooltips de chat, alertas, etc).
+---
 
-🚀 Como Executar o Projeto
-1. Pré-requisitos
-Node.js (Versão LTS recomendada).
+## 🚀 Como Executar o Projeto
 
-Git para versionamento.
+### 1. Requisitos
+* Node.js instalado.
+* Instância do PostgreSQL ativa.
 
-2. Configuração no Windows (Desenvolvimento)
-Clone o repositório:
-
+### 2. Configuração do Banco de Dados
+Execute o script de inicialização para criar as tabelas e o usuário administrador inicial:
+```sql
+-- O sistema utiliza campos SERIAL para IDs e JSONB para permissões
+CREATE TABLE usuarios (
+    id SERIAL PRIMARY KEY,
+    login TEXT UNIQUE,
+    permissoes JSONB DEFAULT '{"vales": {"acesso": false, "nivel": "colaborador"}}'
+    -- ... outros campos
+);
 ```
-git clone https://github.com/Kombait98/Sistemas_vale.git
-cd Sistemas_vale
-```
-Instale as dependências:
 
+### 3. Variáveis de Ambiente
+Crie um arquivo `.env` na raiz do projeto:
+```env
+DB_USER=seu_usuario
+DB_HOST=localhost
+DB_NAME=sistemas_vale
+DB_PASS=sua_senha
+DB_PORT=5432
+APP_SECRET=sua_chave_secreta_para_sessao
 ```
+
+### 4. Instalação
+```bash
+# Instalar dependências
 npm install
-```
-Crie um arquivo .env na raiz do projeto (use o .env.example como base):
-```Plaintext
-PORT=3000
-APP_SECRET=sua_chave_secreta_aqui
-DB_PATH=./database.sqlite
-```
-Inicie o servidor:
 
-```
+# Iniciar o servidor
 node app.js
 ```
-3. Primeiro Acesso (Admin)
-Na primeira execução, o sistema cria automaticamente o usuário administrador:
 
-Login: admin
+---
 
-Senha: O valor definido no campo APP_SECRET do seu arquivo .env.
-
-🐧 Deploy no Ubuntu Server (Produção)
-Para rodar em um servidor Linux de forma contínua:
-
-Instale o PM2 globalmente:
-
+## 📂 Estrutura do Projeto
+```text
+├── middlewares/    # Proteção de rotas e validação de módulos
+├── partials/       # Componentes reutilizáveis (Navbar, Header, Footer)
+├── public/         # Arquivos estáticos (CSS, JS, Imagens)
+├── routes/         # Lógica de rotas dividida por módulos (Auth, Vales, Travels)
+├── views/          # Templates EJS
+└── database.js     # Configuração do Pool de conexão PostgreSQL
 ```
-sudo npm install -g pm2
-```
-Inicie a aplicação com PM2:
 
-```
-pm2 start app.js --name "sistemas-vale"
-```
-Para atualizar o servidor após alterações no Git:
+---
 
-```
-git pull origin main
-npm install
-pm2 restart sistemas-vale
-```
-📂 Estrutura do Projeto
-```Plaintext
+## 🛠️ Próximos Passos (Roadmap)
+- [ ] Finalização do módulo **Travels** (Quilometragem e Gastos).
+- [ ] Implementação de Dashboards gráficos na Home.
+- [ ] Integração de Logs de auditoria para ações de gerentes.
 
-Sistemas_vale/
-├── views/              # Telas em EJS
-│   ├── partials/       # Componentes reutilizáveis (Navbar)
-│   ├── cadastro.ejs    # Tela de lançamento de vales
-│   ├── login.ejs       # Tela de autenticação
-│   ├── relatorio.ejs   # Conferência financeira e filtros
-│   └── autorizacao.ejs # Gestão de workflow e status
-├── app.js              # Servidor Express e rotas
-├── database.js         # Configuração do SQLite e Tabelas
-├── .env                # Variáveis de ambiente (ignorado pelo Git)
-└── .gitignore          # Filtro de arquivos para o repositório
-```
-⚙️ Regras de Negócio e Funcionalidades
-Identificação Automática: O sistema identifica o colaborador logado e vincula seu nome automaticamente ao cadastro do vale.
+---
 
-Workflow de Status:
-
-Pendente: Estado inicial após o cadastro.
-Autorizado: Somente estes aparecem no relatório financeiro.
-Recusado: Mantido no histórico, mas ignorado nos cálculos.
-Gestão de Unidades: Cadastro via Sigla (Ex: SPO) com exibição automática do Nome Completo (Ex: São Paulo - Matriz) nos relatórios via SQL Joins.
-Segurança: Senhas criptografadas e proteção de rotas (checkAuth e checkAdmin).
-Tooltips Dinâmicos: Observações e motivos de deslocamento são exibidos ao passar o mouse sobre o ícone de chat.
