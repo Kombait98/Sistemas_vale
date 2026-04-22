@@ -39,11 +39,70 @@ Sistema modular para gestão de recursos corporativos, desenvolvido com foco em 
 Execute o script de inicialização para criar as tabelas e o usuário administrador inicial:
 ```sql
 -- O sistema utiliza campos SERIAL para IDs e JSONB para permissões
-CREATE TABLE usuarios (
+-- 1. CRIAÇÃO DO USUÁRIO DA APLICAÇÃO (Execute como superusuário postgres)
+-- Se o usuário já existir, este comando pode ser ignorado ou adaptado
+-- CREATE USER "lg-vales" WITH PASSWORD 'sua_senha_aqui';
+
+-- 2. CRIAÇÃO DO BANCO DE DADOS
+-- Nota: No PostgreSQL, comandos de criação de banco não podem rodar dentro de transações.
+CREATE DATABASE sistemas_vale;
+
+-- 3. CONEXÃO AO BANCO (No psql, use \c sistemas_vale. No pgAdmin, abra uma nova Query Tool no banco criado)
+
+-- 4. CRIAÇÃO DAS TABELAS
+
+-- Tabela de Unidades
+CREATE TABLE IF NOT EXISTS unidades (
     id SERIAL PRIMARY KEY,
-    login TEXT UNIQUE,
-    permissoes JSONB DEFAULT '{"vales": {"acesso": false, "nivel": "colaborador"}}'
-    -- ... outros campos
+    sigla VARCHAR(10) UNIQUE NOT NULL,
+    nome VARCHAR(100) NOT NULL
+);
+
+-- Tabela de Usuários (Com suporte a JSONB para permissões modulares)
+CREATE TABLE IF NOT EXISTS usuarios (
+    id SERIAL PRIMARY KEY,
+    login VARCHAR(50) UNIQUE NOT NULL,
+    nome VARCHAR(100) NOT NULL,
+    senha TEXT NOT NULL,
+    permissao VARCHAR(20) DEFAULT 'colaborador', -- 'admin' ou 'colaborador'
+    permissoes JSONB DEFAULT '{
+        "vales": {"acesso": false, "nivel": "colaborador"},
+        "travels": {"acesso": false, "nivel": "colaborador"}
+    }'
+);
+
+-- Tabela de Vales
+CREATE TABLE IF NOT EXISTS vales (
+    id SERIAL PRIMARY KEY,
+    usuario VARCHAR(100),
+    data DATE NOT NULL,
+    saida INTEGER REFERENCES unidades(id) ON DELETE SET NULL,
+    chegada INTEGER REFERENCES unidades(id) ON DELETE SET NULL,
+    quantidade INTEGER NOT NULL,
+    valor_unitario NUMERIC(10, 2) NOT NULL,
+    motivo TEXT,
+    pago INTEGER DEFAULT 0, -- 0: Pendente, 1: Pago
+    status INTEGER DEFAULT 0 -- 0: Pendente, 1: Autorizado, 2: Recusado
+);
+
+-- 5. CONFIGURAÇÃO DE PERMISSÕES PARA O USUÁRIO "lg-vales"
+GRANT ALL PRIVILEGES ON DATABASE sistemas_vale TO "lg-vales";
+GRANT USAGE ON SCHEMA public TO "lg-vales";
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "lg-vales";
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO "lg-vales";
+
+-- Garante que o usuário da aplicação seja o dono dos objetos para evitar erros de permissão futura
+ALTER SCHEMA public OWNER TO "lg-vales";
+ALTER TABLE unidades OWNER TO "lg-vales";
+ALTER TABLE usuarios OWNER TO "lg-vales";
+ALTER TABLE vales OWNER TO "lg-vales";
+
+-- 6. DADOS INICIAIS (OPCIONAL)
+-- Insira aqui suas unidades padrão
+INSERT INTO unidades (sigla, nome) VALUES 
+('MAT', 'Matriz'),
+('CORP', 'Corporativo')
+ON CONFLICT DO NOTHING;
 );
 ```
 
